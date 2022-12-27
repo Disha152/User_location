@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
-import 'package:location/location.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 void main() {
   runApp(const MyApp());
@@ -31,11 +31,27 @@ class Homepage extends StatefulWidget {
 }
 
 class _HomepageState extends State<Homepage> {
+  String LocationMessage = 'Get Current Location';
   late String lat;
   late String long;
 
-  late String LocationMessage = 'Get Current Location';
-
+  // Future<void> _openMap(String lat, String long) async {
+  //   String googleUrl =
+  //       'https://www.google.com/maps/search/?api=1&query=$lat,$long';
+  //   await canLaunchUrlString(googleUrl)
+  //       ? await launchUrlString(googleUrl)
+  //       : throw 'Could not open the map.';
+  // }
+  Future<void> _openMap() async {
+    Position position = await _getCurrentLocation();
+    String lat = '${position.latitude}';
+    String long = '${position.longitude}';
+    String googleUrl =
+        'https://www.google.com/maps/search/?api=1&query=$lat,$long';
+    await canLaunchUrlString(googleUrl)
+        ? await launchUrlString(googleUrl)
+        : throw 'Could not open the map.';
+  }
 
 //To check if service location is on or not.
   Future<Position> _getCurrentLocation() async {
@@ -60,15 +76,42 @@ class _HomepageState extends State<Homepage> {
     return await Geolocator.getCurrentPosition();
   }
 
+  //Listen to local update
+
+  void _liveLocation() {
+    LocationSettings locationSettings = const LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 10,
+    );
+
+    Geolocator.getPositionStream(locationSettings: locationSettings)
+        .listen((Position position) {
+      lat = position.latitude.toString();
+      long = position.longitude.toString();
+
+      setState(() {
+        LocationMessage = 'Latitude:$lat , Longitude:$long';
+      });
+    });
+  }
+
+  // Future<void> _openMap(String lat,String long) async {
+  //   String googleUrl =
+  //       'https://www.google.com/maps/search/?api=1&query=$lat,$long';
+  //   await canLaunchUrlString(googleUrl)
+  //       ? await launchUrlString(googleUrl)
+  //       : throw 'Could not open the map.';
+  // }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: Colors.blue[50],
         appBar: AppBar(
           centerTitle: true,
-          title: ( Text(
-            'Live Locator', style: GoogleFonts.dmSerifDisplay(textStyle: TextStyle(fontSize: 24))
-          )),
+          title: (Text('Live Locator',
+              style: GoogleFonts.dmSerifDisplay(
+                  textStyle: const TextStyle(fontSize: 24)))),
         ),
         body: Center(
             child: Column(
@@ -77,7 +120,10 @@ class _HomepageState extends State<Homepage> {
           children: <Widget>[
             Text(
               LocationMessage,
-            style: GoogleFonts.roboto(textStyle: TextStyle(fontSize: 24)), // style: GoogleFonts.roboto(textStyle: TextStyle(fontSize: 24)),
+              style: GoogleFonts.roboto(
+                  textStyle: const TextStyle(
+                      fontSize:
+                          24)), // style: GoogleFonts.roboto(textStyle: TextStyle(fontSize: 24)),
             ),
             const SizedBox(
               height: 20,
@@ -91,10 +137,22 @@ class _HomepageState extends State<Homepage> {
                       LocationMessage = 'Latitude:$lat , Longitude:$long';
                       // print('Latitude:$lat,Longitude:$long');
                     });
+                    _liveLocation();
                   }));
                 },
-                label: Text('Get Current Location'),
-                icon: Icon(Icons.location_searching_sharp)),
+                label: const Text('Get Current Location'),
+                icon: const Icon(Icons.location_searching_sharp)),
+                const SizedBox(
+              height: 20,
+            ),
+            
+            // Create an elevated button
+            ElevatedButton.icon(
+                onPressed: () async {
+                  await _openMap();
+                },
+                icon: const Icon(Icons.map_sharp),
+                label: const Text('Open Google Maps')),
           ],
         )));
   }
