@@ -1,10 +1,8 @@
-import 'dart:html';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher_string.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const MyApp());
@@ -35,25 +33,16 @@ class _HomepageState extends State<Homepage> {
   late String lat;
   late String long;
 
-  // Future<void> _openMap(String lat, String long) async {
-  //   String googleUrl =
-  //       'https://www.google.com/maps/search/?api=1&query=$lat,$long';
-  //   await canLaunchUrlString(googleUrl)
-  //       ? await launchUrlString(googleUrl)
-  //       : throw 'Could not open the map.';
-  // }
   Future<void> _openMap() async {
-    Position position = await _getCurrentLocation();
-    String lat = '${position.latitude}';
-    String long = '${position.longitude}';
-    String googleUrl =
+    String googleMapsUrl =
         'https://www.google.com/maps/search/?api=1&query=$lat,$long';
-    await canLaunchUrlString(googleUrl)
-        ? await launchUrlString(googleUrl)
-        : throw 'Could not open the map.';
+    if (await canLaunch(googleMapsUrl)) {
+      await launch(googleMapsUrl);
+    } else {
+      throw 'Could not launch $googleMapsUrl';
+    }
   }
 
-//To check if service location is on or not.
   Future<Position> _getCurrentLocation() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -95,14 +84,6 @@ class _HomepageState extends State<Homepage> {
     });
   }
 
-  // Future<void> _openMap(String lat,String long) async {
-  //   String googleUrl =
-  //       'https://www.google.com/maps/search/?api=1&query=$lat,$long';
-  //   await canLaunchUrlString(googleUrl)
-  //       ? await launchUrlString(googleUrl)
-  //       : throw 'Could not open the map.';
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -142,10 +123,10 @@ class _HomepageState extends State<Homepage> {
                 },
                 label: const Text('Get Current Location'),
                 icon: const Icon(Icons.location_searching_sharp)),
-                const SizedBox(
+            const SizedBox(
               height: 20,
             ),
-            
+
             // Create an elevated button
             ElevatedButton.icon(
                 onPressed: () async {
